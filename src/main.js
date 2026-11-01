@@ -12,6 +12,10 @@ const pause = document.querySelector('#pause');
 const announcement = document.querySelector('#animation-announcement');
 const caption = document.querySelector('#assembly-state');
 const portraitImage = document.querySelector('.portrait-fallback');
+const toggleLabel = document.querySelector('#toggle-label');
+const pauseIcon = document.querySelector('#pause-icon');
+const assemblyProgress = document.querySelector('#assembly-progress');
+const progressFill = document.querySelector('#progress-fill');
 const captions = [
   'A little curiosity, brought to life.',
   'Learning the world, one step at a time.',
@@ -28,6 +32,8 @@ let deletingCaption = false;
 let captionActive = false;
 let nextCharacterAt = 0;
 let portrait;
+let previousControls = '';
+let previousProgress = -1;
 
 function setTheme(theme) {
   root.dataset.theme = theme;
@@ -47,16 +53,24 @@ themePreference.addEventListener('change', event => {
 setTheme(root.dataset.theme);
 
 function updateControls({ assembled, paused, progress, settled, time }) {
-  toggle.setAttribute('aria-pressed', String(!assembled));
-  document.querySelector('#toggle-label').textContent = assembled ? 'Disperse' : 'Reassemble';
-  pause.setAttribute('aria-pressed', String(paused));
-  pause.setAttribute('aria-label', paused ? 'Resume animation' : 'Pause animation');
-  pause.title = paused ? 'Resume animation' : 'Pause animation';
-  document.querySelector('#pause-icon').setAttribute('d', paused ? 'M6 3l10 7-10 7Z' : 'M6 4v12M14 4v12');
-  hero.classList.toggle('motion-paused', paused);
-  hero.dataset.assembly = assembled ? settled ? 'assembled' : 'assembling' : settled ? 'dispersed' : 'dispersing';
-  document.querySelector('#assembly-progress').textContent = `${String(Math.round(progress * 100)).padStart(3, '0')}%`;
-  document.querySelector('#progress-fill').style.width = `${progress * 100}%`;
+  const controls = `${assembled}:${paused}:${settled}`;
+  if (controls !== previousControls) {
+    toggle.setAttribute('aria-pressed', String(!assembled));
+    toggleLabel.textContent = assembled ? 'Disperse' : 'Reassemble';
+    pause.setAttribute('aria-pressed', String(paused));
+    pause.setAttribute('aria-label', paused ? 'Resume animation' : 'Pause animation');
+    pause.title = paused ? 'Resume animation' : 'Pause animation';
+    pauseIcon.setAttribute('d', paused ? 'M6 3l10 7-10 7Z' : 'M6 4v12M14 4v12');
+    hero.classList.toggle('motion-paused', paused);
+    hero.dataset.assembly = assembled ? settled ? 'assembled' : 'assembling' : settled ? 'dispersed' : 'dispersing';
+    previousControls = controls;
+  }
+  const percentage = Math.round(progress * 100);
+  if (percentage !== previousProgress) {
+    assemblyProgress.textContent = `${String(percentage).padStart(3, '0')}%`;
+    progressFill.style.width = `${percentage}%`;
+    previousProgress = percentage;
+  }
   if (assembled && settled) {
     if (!captionActive) {
       captionActive = true;
@@ -81,7 +95,8 @@ function updateControls({ assembled, paused, progress, settled, time }) {
     }
   } else {
     captionActive = false;
-    caption.textContent = paused ? 'Motion paused.' : assembled ? 'Gathering possibilities...' : 'A world of possibilities.';
+    const text = paused ? 'Motion paused.' : assembled ? 'Gathering possibilities...' : 'A world of possibilities.';
+    if (caption.textContent !== text) caption.textContent = text;
   }
 }
 
@@ -91,9 +106,7 @@ async function startHero() {
     else window.addEventListener('load', resolve, { once: true });
   });
   await Promise.all([document.fonts.ready, portraitImage.decode()]);
-  hero.dataset.ready = 'true';
-  await Promise.all(hero.getAnimations().map(animation => animation.finished));
-  return createParticlePortrait({
+  const controller = await createParticlePortrait({
     canvas: document.querySelector('#particles'),
     image: portraitImage,
     anchor: document.querySelector('.portrait-anchor'),
@@ -101,6 +114,10 @@ async function startHero() {
     theme: root.dataset.theme,
     onUpdate: updateControls,
   });
+  hero.dataset.ready = 'true';
+  await Promise.all(hero.getAnimations().map(animation => animation.finished));
+  controller.start();
+  return controller;
 }
 
 startHero().then(controller => {
