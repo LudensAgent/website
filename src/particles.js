@@ -229,7 +229,7 @@ export async function createParticlePortrait({ canvas, image, anchor, reducedMot
       for (let i = 0; i < count; i++) {
         const index = i * 3;
         const offset = i * 2;
-        const delayed = duration ? Math.max(0, Math.min(1, (elapsed - seeds[i] * duration * .26) / (duration * .74))) : 1;
+        const delayed = duration ? Math.max(0, Math.min(1, (elapsed - seeds[i] * duration * .16) / (duration * .84))) : 1;
         const ease = 1 - Math.pow(1 - delayed, 3);
         const arc = Math.sin(delayed * Math.PI) * (seeds[i] - .5) * 130;
         let x = starts[index] + (destinations[index] - starts[index]) * ease + arc;
