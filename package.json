@@ -1,0 +1,20 @@
+{
+  "name": "ludens-agent-website",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "check": "node --check src/main.js && node --check src/particles.js"
+  },
+  "dependencies": {
+    "@fontsource-variable/manrope": "5.3.0",
+    "@fontsource/ibm-plex-mono": "5.3.0",
+    "three": "0.187.0"
+  },
+  "devDependencies": {
+    "vite": "8.3.5"
+  }
+}
