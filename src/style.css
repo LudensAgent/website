@@ -63,6 +63,9 @@ svg { display: block; }
 .hero { min-height: 680px; height: 100svh; position: relative; overflow: clip; isolation: isolate; background: var(--bg); }
 .atmosphere { position: absolute; inset: 0; background: radial-gradient(ellipse at 69% 52%, var(--halo), transparent 63%); pointer-events: none; }
 .atmosphere::after { content: ''; position: absolute; inset: 0; opacity: .18; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.94' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Cpath fill='%23838c9d' opacity='.18' filter='url(%23n)' d='M0 0h180v180H0z'/%3E%3C/svg%3E"); }
+/* Sparse, fading contours sit behind the portrait and leave the copy clear. */
+.background-lines { position: absolute; inset: 0; width: 100%; height: 100%; color: var(--blue); opacity: .28; pointer-events: none; }
+.background-lines path { stroke-width: 1; vector-effect: non-scaling-stroke; }
 .header { position: absolute; inset: 0 0 auto; z-index: 5; display: flex; align-items: center; gap: 46px; padding: 31px 3.6%; }
 .brand { display: inline-flex; align-items: center; gap: 11px; font-size: 21px; font-weight: 650; letter-spacing: -.8px; white-space: nowrap; }
 .whale-logo { width: 35px; height: 32px; color: var(--blue); }
@@ -168,6 +171,8 @@ h1 .title-period { display: inline-block; color: var(--blue); margin-left: -.045
 @media (max-width: 1000px) and (min-width: 701px) { .header { gap: 25px; }.navigation { gap: 20px; }.hero-copy { left: 6.5%; }.description { max-width: 340px; }.hero-actions { gap: 15px; }.button-primary { gap: 15px; padding: 14px; }.portrait-anchor { left: 80%; height: 115%; top: 9%; }.reading-shade { background: linear-gradient(90deg,var(--bg) 10%,transparent 60%),linear-gradient(0deg,var(--bg),transparent 13%); }.manifesto { margin-top: 26px; } }
 @media (max-width: 700px) {
   .hero { min-height: 540px; height: 100svh; }
+  .background-lines { opacity: .16; }
+  .background-line-secondary { display: none; }
   .header { padding: 22px 6%; gap: 14px; justify-content: space-between; }
   .brand { font-size: 16px; gap: 8px; letter-spacing: -.6px; }.whale-logo { width: 28px; height: 27px; }
   .navigation { display: none; }

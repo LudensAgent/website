@@ -24,6 +24,22 @@
   <body>
     <main class="hero" id="home">
       <div class="atmosphere" aria-hidden="true"></div>
+      <svg class="background-lines" viewBox="0 0 1600 900" preserveAspectRatio="none" fill="none" aria-hidden="true" focusable="false">
+        <defs>
+          <linearGradient id="background-line-fade" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="currentColor" stop-opacity="0" />
+            <stop offset=".18" stop-color="currentColor" stop-opacity=".8" />
+            <stop offset=".5" stop-color="currentColor" stop-opacity=".55" />
+            <stop offset=".85" stop-color="currentColor" stop-opacity="0" />
+          </linearGradient>
+        </defs>
+        <g stroke="url(#background-line-fade)">
+          <path d="M-120 225C180 270 385 182 565 90S900-30 1190 85" />
+          <path class="background-line-secondary" d="M-120 246C190 291 395 203 575 111S910-9 1200 106" opacity=".45" />
+          <path d="M-120 800C140 705 365 760 565 830S920 960 1260 815" />
+        </g>
+        <path class="background-line-secondary" d="M62 179v32m-8-16h16M1518 662v32m-8-16h16" stroke="currentColor" opacity=".4" />
+      </svg>
       <div class="orbits" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="orbit orbit-three"></div><span class="orbit-star star-one"></span><span class="orbit-star star-two"></span></div>
       <div class="portrait-anchor" aria-hidden="true"><img class="portrait-fallback" src="./assets/whale-girl.png" alt="" /></div>
       <canvas id="particles" role="img" aria-label="A blue-haired whale girl made of colored particles. Move your pointer or touch to gently scatter them."></canvas>
