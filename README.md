@@ -1,6 +1,6 @@
 # Ludens Agent · Hero
 
-独立单屏首页，所有源码、图片、字体依赖和构建配置均在 `website/` 内，不依赖 Minecraft 服务。页面包含完整的浅色 / 深色主题，不使用参考图中的中间分界线。
+Ludens Agent 的独立单屏展示站，源码、图片、字体依赖和构建配置都在本仓库内，不依赖 Minecraft 服务。页面包含完整的浅色 / 深色主题、真实 Canvas 粒子人物和线性鲸尾 Logo，支持 GitHub Pages 部署。
 
 ## 运行
 
@@ -20,7 +20,48 @@ npm run build
 npm run preview
 ```
 
-构建产物是 `dist/`，可放到静态服务器，包括子路径；生产预览为 <http://127.0.0.1:4173/>。不自动发布。
+构建产物是 `dist/`；生产预览为 <http://127.0.0.1:4173/>。本地构建不会发布网站。
+
+## GitHub Pages
+
+部署工作流为 [`.github/workflows/pages.yml`](.github/workflows/pages.yml)，在推送 `main` 或手动触发时执行。工作流使用 Node.js 24，安装锁定依赖、检查 JavaScript、构建 `dist/`，然后通过 GitHub 官方 Pages Actions 发布。
+
+首次使用：
+
+1. 在 GitHub 创建一个空仓库，不额外初始化 README 或其他文件。
+2. 在本地仓库目录连接远程并推送，将下面的 `<owner>` 和 `<repo>` 替换为实际值：
+
+   ```powershell
+   git remote add origin https://github.com/<owner>/<repo>.git
+   git push -u origin main
+   ```
+
+3. 在远程仓库的 **Settings → Pages → Build and deployment → Source** 选择 **GitHub Actions**。
+4. 在 **Actions → Deploy GitHub Pages → Run workflow** 运行部署。以后每次推送 `main` 都会自动更新页面。若首次推送时尚未开启 Pages，完成设置后重新运行工作流即可。
+
+工作流读取 Pages 的 `base_path`，自动匹配项目站点的 `/<repo>/` 路径或根域名路径，无需在代码中写死仓库名。部署完成后的页面地址会显示在 Actions 的 `github-pages` 环境中。无需手动创建 `gh-pages` 分支，也无需把 `dist/` 或 `node_modules/` 提交到 Git。
+
+本地可验证项目子路径构建：
+
+```powershell
+npm run build -- --base /website/
+npm run preview -- --base /website/
+```
+
+访问 <http://127.0.0.1:4173/website/>。普通本地构建仍使用相对路径 `./`。
+
+配置依据：[GitHub Pages 自定义工作流](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages)、[Vite 的 GitHub Pages 部署说明](https://vite.dev/guide/static-deploy.html#github-pages)。
+
+## 提交历史来源
+
+本仓库通过 `git subtree split --prefix=website` 从原项目提取，只保留网站文件及相关提交。文件提升到仓库根目录后，Git 提交哈希会改变，原作者、时间、提交说明和网站修改顺序均保留。
+
+| 原项目提交 | 独立仓库提交 | 内容 |
+| --- | --- | --- |
+| `42730b7` | `4a5656e` | 初始粒子展示站 |
+| `f338267` | `4c07720` | 全人物粒子与局部发丝虚化 |
+| `56d5f7d` | `a759a3c` | 加载顺序、主题过渡、随机打字 |
+| `eef02af` | `5565b84` | 线性鲸尾、右上角控制栏、缩短入场空档 |
 
 ## 交互与实现
 
@@ -33,7 +74,7 @@ npm run preview
 - WebGL 2 不可用时显示同一张静态插图，并隐藏无法工作的粒子控制。JavaScript 禁用时也提供插图和入口链接。
 - 主题默认跟随系统，手动选择保存为仅包含 `light` / `dark` 的本地 Cookie；背景、文本、按钮、轨道和散点以约 0.8 秒平滑渐变。CSS 注册颜色变量让渐变遮罩同步过渡，Canvas 独立插值主题色；粒子暂停时仍可切换主题，快速反向切换从当前颜色继续。
 - 字体通过 npm 本地打包，不依赖运行时字体 CDN。标题 / 正文使用 Manrope Variable，技术文字使用 IBM Plex Mono，均为 OFL 授权。
-- 项目入口与文档链接根据本仓库 `origin` 指向 `https://github.com/Decision2016/Curio`，可直接修改 `index.html` 中的链接。
+- 项目入口与文档链接指向主项目 `https://github.com/Decision2016/Curio`，展示站自身的远程仓库可独立配置；可直接修改 `index.html` 中的入口链接。
 
 ## 素材与设计依据
 
