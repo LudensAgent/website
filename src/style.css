@@ -8,6 +8,16 @@
   src: url('@fontsource-variable/manrope/files/manrope-latin-wght-normal.woff2') format('woff2-variations');
 }
 
+/* Animate the shared palette so gradients and solid surfaces fade together. */
+@property --bg { syntax: '<color>'; inherits: true; initial-value: #f5f7fb; }
+@property --ink { syntax: '<color>'; inherits: true; initial-value: #192538; }
+@property --muted { syntax: '<color>'; inherits: true; initial-value: #75829a; }
+@property --faint { syntax: '<color>'; inherits: true; initial-value: #a2acc0; }
+@property --blue { syntax: '<color>'; inherits: true; initial-value: #427be9; }
+@property --line { syntax: '<color>'; inherits: true; initial-value: #b4c5e14d; }
+@property --panel { syntax: '<color>'; inherits: true; initial-value: #ffffff9c; }
+@property --halo { syntax: '<color>'; inherits: true; initial-value: #b2cef057; }
+
 :root {
   font-family: 'Manrope Variable', sans-serif;
   color: var(--ink);
@@ -23,6 +33,9 @@
   --halo: #b2cef057;
   --mono: 'IBM Plex Mono', monospace;
   color-scheme: light;
+  transition-property: --bg, --ink, --muted, --faint, --blue, --line, --panel, --halo;
+  transition-duration: .8s;
+  transition-timing-function: ease-in-out;
 }
 :root[data-theme='dark'] {
   --bg: #060b14;
@@ -47,8 +60,8 @@ button:disabled { cursor: wait; opacity: .45; }
 button:focus-visible, a:focus-visible { outline: 2px solid var(--blue); outline-offset: 6px; }
 button, a, .theme-indicator { transition: color .25s, background .25s, border-color .25s, transform .25s, opacity .25s; }
 svg { display: block; }
-.hero { min-height: 680px; height: 100svh; position: relative; overflow: clip; isolation: isolate; background: var(--bg); transition: background .65s, color .65s; }
-.atmosphere { position: absolute; inset: 0; background: radial-gradient(ellipse at 69% 52%, var(--halo), transparent 63%); pointer-events: none; transition: background .65s; }
+.hero { min-height: 680px; height: 100svh; position: relative; overflow: clip; isolation: isolate; background: var(--bg); }
+.atmosphere { position: absolute; inset: 0; background: radial-gradient(ellipse at 69% 52%, var(--halo), transparent 63%); pointer-events: none; }
 .atmosphere::after { content: ''; position: absolute; inset: 0; opacity: .18; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.94' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Cpath fill='%23838c9d' opacity='.18' filter='url(%23n)' d='M0 0h180v180H0z'/%3E%3C/svg%3E"); }
 .header { position: absolute; inset: 0 0 auto; z-index: 5; display: flex; align-items: center; gap: 46px; padding: 31px 3.6%; }
 .brand { display: inline-flex; align-items: center; gap: 11px; font-size: 21px; font-weight: 650; letter-spacing: -.8px; white-space: nowrap; }
@@ -69,7 +82,7 @@ svg { display: block; }
 .static-portrait .portrait-fallback { opacity: 1; }
 #particles { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; touch-action: pan-y; }
 .reading-shade { position: absolute; z-index: 2; inset: 0; pointer-events: none; background: linear-gradient(90deg, var(--bg) 0%, transparent 15%), linear-gradient(0deg, var(--bg), transparent 15%); opacity: .8; }
-.hero-copy { position: absolute; z-index: 3; left: 6%; top: 50%; transform: translateY(-45%); width: 45%; pointer-events: none; }
+.hero-copy { position: absolute; z-index: 3; left: 8%; top: 50%; transform: translateY(-45%); width: 45%; pointer-events: none; }
 .hero-copy a { pointer-events: auto; }
 .eyebrow { color: var(--muted); font: 10px var(--mono); letter-spacing: 2.6px; display: flex; align-items: center; gap: 10px; margin: 0 0 25px; }
 .eyebrow span { width: 5px; height: 5px; background: var(--blue); border-radius: 50%; box-shadow: 0 0 0 4px #578ce910; }
@@ -103,7 +116,10 @@ h1 .title-period { display: inline-block; color: var(--blue); margin-left: -.045
 .telemetry-details { display: flex; justify-content: space-between; font-size: 8px; letter-spacing: 1px; }
 .progress-track { height: 1px; background: var(--line); margin: 9px 0; }
 #progress-fill { width: 0; height: 100%; background: var(--blue); }
-.telemetry-caption { font-size: 8px; letter-spacing: .3px; }
+.telemetry-caption { display: block; min-height: 3.6em; font-size: 8px; letter-spacing: .3px; }
+.hero[data-assembly='assembled'] .telemetry-caption::after { content: ''; display: inline-block; width: 1px; height: 1.1em; margin-left: 3px; vertical-align: -.15em; background: var(--blue); animation: cursor-blink 1s steps(1, end) infinite; }
+.motion-paused .telemetry-caption::after { animation-play-state: paused !important; }
+@keyframes cursor-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 .footer { position: absolute; bottom: 28px; left: 3.8%; right: 3.8%; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
 .footer-note { font: 8px var(--mono); color: var(--muted); letter-spacing: 1.3px; margin: 0; display: flex; align-items: center; gap: 8px; }
 .status-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--blue); }
@@ -122,8 +138,8 @@ h1 .title-period { display: inline-block; color: var(--blue); margin-left: -.045
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .motion-paused .orbit-star { box-shadow: none; }
 @media (max-width: 1350px) { .telemetry { display: none; }.portrait-anchor { left: 73%; }.footer-note-extra { display: none; } }
-@media (min-width: 1600px) { .hero-copy { left: 5%; }.header { padding-top: 35px; }.intro { font-size: 14px; }.hero-actions { margin-top: 30px; }.button-primary { padding: 17px 23px; font-size: 13px; } }
-@media (max-width: 1000px) and (min-width: 701px) { .header { gap: 25px; }.navigation { gap: 20px; }.hero-copy { left: 5%; }.description { max-width: 340px; }.hero-actions { gap: 15px; }.button-primary { gap: 15px; padding: 14px; }.portrait-anchor { left: 80%; height: 115%; top: 9%; }.reading-shade { background: linear-gradient(90deg,var(--bg) 10%,transparent 60%),linear-gradient(0deg,var(--bg),transparent 13%); }.manifesto { margin-top: 26px; } }
+@media (min-width: 1600px) { .hero-copy { left: 7%; }.header { padding-top: 35px; }.intro { font-size: 14px; }.hero-actions { margin-top: 30px; }.button-primary { padding: 17px 23px; font-size: 13px; } }
+@media (max-width: 1000px) and (min-width: 701px) { .header { gap: 25px; }.navigation { gap: 20px; }.hero-copy { left: 6.5%; }.description { max-width: 340px; }.hero-actions { gap: 15px; }.button-primary { gap: 15px; padding: 14px; }.portrait-anchor { left: 80%; height: 115%; top: 9%; }.reading-shade { background: linear-gradient(90deg,var(--bg) 10%,transparent 60%),linear-gradient(0deg,var(--bg),transparent 13%); }.manifesto { margin-top: 26px; } }
 @media (max-width: 700px) {
   .hero { min-height: 540px; height: 100svh; }
   .header { padding: 22px 6%; gap: 14px; justify-content: space-between; }
@@ -148,4 +164,4 @@ h1 .title-period { display: inline-block; color: var(--blue); margin-left: -.045
 @media (max-width: 360px) { .theme-switch button span { display: none; }.theme-switch button { min-width: 29px; }.hero-actions { gap: 13px; }.footer-note { display: none; }.footer { justify-content: center; } }
 @media (max-width: 700px) and (max-height: 700px) { .hero-copy { bottom: 87px; } h1 { font-size: 56px; }.eyebrow { margin-bottom: 12px; }.intro { font-size: 10px; margin: 8px 0 14px; }.small-rule { margin: 12px 0 9px; }.description { font-size: 15px; }.portrait-anchor { top: 12%; height: 84%; left: 77%; } }
 @media (max-height: 740px) and (min-width: 701px) { .hero { min-height: 560px; }.hero-copy { transform: translateY(-43%); } h1 { font-size: clamp(68px,7vw,100px); }.eyebrow { margin-bottom: 19px; }.intro { margin: 10px 0 17px; }.manifesto { margin-top: 22px; }.small-rule { margin: 18px 0 12px; } }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { .button-primary:hover, .button-primary:hover svg { transform: none; } }

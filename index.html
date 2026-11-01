@@ -8,6 +8,13 @@
     <title>Ludens Agent — Made to explore.</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="preload" href="./assets/whale-girl.png" as="image" />
+    <style>
+      :root { --bg: #f5f7fb; background: var(--bg); }
+      :root[data-theme='dark'] { --bg: #060b14; }
+      .hero { opacity: 0; transition: opacity .45s ease; }
+      .hero[data-ready='true'] { opacity: 1; }
+      .portrait-fallback { opacity: 0; }
+    </style>
     <script>
       const savedTheme = document.cookie.split('; ').find(value => value.startsWith('ludens-theme='))?.split('=')[1];
       document.documentElement.dataset.theme = savedTheme === 'dark' || savedTheme === 'light'
@@ -70,7 +77,7 @@
         <p class="interaction-hint"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2" width="10" height="18" rx="5"/><path d="M12 6v4"/></svg><span>MOVE TO INTERACT</span></p>
       </footer>
       <p class="sr-only" id="animation-announcement" role="status" aria-live="polite"></p>
-      <noscript><style>.portrait-fallback { opacity: 1; }.theme-switch,.particle-controls,.telemetry,.interaction-hint { display:none; }</style></noscript>
+      <noscript><style>.hero,.portrait-fallback { opacity: 1; }.theme-switch,.particle-controls,.telemetry,.interaction-hint { display:none; }</style></noscript>
     </main>
     <script type="module" src="./src/main.js"></script>
   </body>

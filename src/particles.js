@@ -130,16 +130,19 @@ export async function createParticlePortrait({ canvas, image, anchor, reducedMot
   let height = 1;
   let clock = 0;
   let transitionStart = 0;
-  let duration = reducedMotion ? 0 : 3.6;
+  let duration = 3.6;
   let lastTime = 0;
   let lastUpdate = -1;
   let assembled = true;
   let paused = false;
   let settled = false;
-  let progress = reducedMotion ? 1 : 0;
+  let progress = 0;
   let startProgress = progress;
   let frameId = 0;
   let disposed = false;
+  let themeFrom = theme === 'dark' ? 1 : 0;
+  let themeTarget = themeFrom;
+  let themeStartedAt = 0;
   canvas.dataset.particleCount = String(count);
 
   function resize(initial = false) {
@@ -181,7 +184,7 @@ export async function createParticlePortrait({ canvas, image, anchor, reducedMot
     }
     hazeAttribute.needsUpdate = true;
     if (initial) {
-      positions.set(reducedMotion ? formed : origins);
+      positions.set(origins);
       starts.set(positions);
     } else transition(assembled, .65);
     positionAttribute.needsUpdate = true;
@@ -207,72 +210,79 @@ export async function createParticlePortrait({ canvas, image, anchor, reducedMot
       positionAttribute.needsUpdate = true;
       renderer.render(scene, camera);
     }
-    onUpdate({ assembled, paused, progress, settled });
+    onUpdate({ assembled, paused, progress, settled, time: clock });
   }
 
   function animate(now) {
     if (disposed) return;
     const delta = Math.min((now - (lastTime || now)) / 1000, .04);
     lastTime = now;
-    clock += delta;
-    const elapsed = clock - transitionStart;
-    const fraction = duration ? Math.min(elapsed / duration, 1) : 1;
-    progress = startProgress + ((assembled ? 1 : 0) - startProgress) * fraction;
-    settled = fraction === 1;
-    const damping = Math.exp(-10 * delta);
-    const radius = width < 701 ? 50 : 75;
-    const destinations = assembled ? formed : scattered;
-    for (let i = 0; i < count; i++) {
-      const index = i * 3;
-      const offset = i * 2;
-      const delayed = duration ? Math.max(0, Math.min(1, (elapsed - seeds[i] * duration * .26) / (duration * .74))) : 1;
-      const ease = 1 - Math.pow(1 - delayed, 3);
-      const arc = Math.sin(delayed * Math.PI) * (seeds[i] - .5) * 130;
-      let x = starts[index] + (destinations[index] - starts[index]) * ease + arc;
-      let y = starts[index + 1] + (destinations[index + 1] - starts[index + 1]) * ease;
-      if (!assembled) {
-        x += Math.sin(clock * .45 + seeds[i] * 40) * 6 * ease;
-        y += Math.cos(clock * .35 + seeds[i] * 30) * 6 * ease;
-      } else {
-        const motion = reducedMotion ? .25 : 1;
-        x += Math.sin(clock * .4 + seeds[i] * 40) * haze[i] * seeds[i] * 3 * ease * motion;
-        y += Math.cos(clock * .3 + seeds[i] * 30) * haze[i] * seeds[i] * 2 * ease * motion;
-      }
-      let forceX = -offsets[offset] * 46;
-      let forceY = -offsets[offset + 1] * 46;
-      if (pointer.active) {
-        const dx = x + offsets[offset] - pointer.x;
-        const dy = y + offsets[offset + 1] - pointer.y;
-        const distanceSquared = dx * dx + dy * dy;
-        if (distanceSquared < radius * radius) {
-          const distance = Math.max(Math.sqrt(distanceSquared), 1);
-          const force = (1 - distance / radius) * 1000;
-          forceX += dx / distance * force;
-          forceY += dy / distance * force;
+    if (!paused) {
+      clock += delta;
+      const elapsed = clock - transitionStart;
+      const fraction = duration ? Math.min(elapsed / duration, 1) : 1;
+      progress = startProgress + ((assembled ? 1 : 0) - startProgress) * fraction;
+      settled = fraction === 1;
+      const damping = Math.exp(-10 * delta);
+      const radius = width < 701 ? 50 : 75;
+      const destinations = assembled ? formed : scattered;
+      for (let i = 0; i < count; i++) {
+        const index = i * 3;
+        const offset = i * 2;
+        const delayed = duration ? Math.max(0, Math.min(1, (elapsed - seeds[i] * duration * .26) / (duration * .74))) : 1;
+        const ease = 1 - Math.pow(1 - delayed, 3);
+        const arc = Math.sin(delayed * Math.PI) * (seeds[i] - .5) * 130;
+        let x = starts[index] + (destinations[index] - starts[index]) * ease + arc;
+        let y = starts[index + 1] + (destinations[index + 1] - starts[index + 1]) * ease;
+        if (!assembled) {
+          x += Math.sin(clock * .45 + seeds[i] * 40) * 6 * ease;
+          y += Math.cos(clock * .35 + seeds[i] * 30) * 6 * ease;
+        } else {
+          const motion = reducedMotion ? .25 : 1;
+          x += Math.sin(clock * .4 + seeds[i] * 40) * haze[i] * seeds[i] * 3 * ease * motion;
+          y += Math.cos(clock * .3 + seeds[i] * 30) * haze[i] * seeds[i] * 2 * ease * motion;
         }
+        let forceX = -offsets[offset] * 46;
+        let forceY = -offsets[offset + 1] * 46;
+        if (pointer.active) {
+          const dx = x + offsets[offset] - pointer.x;
+          const dy = y + offsets[offset + 1] - pointer.y;
+          const distanceSquared = dx * dx + dy * dy;
+          if (distanceSquared < radius * radius) {
+            const distance = Math.max(Math.sqrt(distanceSquared), 1);
+            const force = (1 - distance / radius) * 1000;
+            forceX += dx / distance * force;
+            forceY += dy / distance * force;
+          }
+        }
+        velocities[offset] = (velocities[offset] + forceX * delta) * damping;
+        velocities[offset + 1] = (velocities[offset + 1] + forceY * delta) * damping;
+        offsets[offset] += velocities[offset] * delta;
+        offsets[offset + 1] += velocities[offset + 1] * delta;
+        positions[index] = x + offsets[offset];
+        positions[index + 1] = y + offsets[offset + 1];
       }
-      velocities[offset] = (velocities[offset] + forceX * delta) * damping;
-      velocities[offset + 1] = (velocities[offset + 1] + forceY * delta) * damping;
-      offsets[offset] += velocities[offset] * delta;
-      offsets[offset + 1] += velocities[offset + 1] * delta;
-      positions[index] = x + offsets[offset];
-      positions[index + 1] = y + offsets[offset + 1];
+      positionAttribute.needsUpdate = true;
+      material.uniforms.assembly.value = progress;
+      dustMaterial.uniforms.time.value = clock * (reducedMotion ? .25 : 1);
     }
-    positionAttribute.needsUpdate = true;
-    material.uniforms.assembly.value = progress;
-    dustMaterial.uniforms.time.value = clock * (reducedMotion ? .25 : 1);
+    const themeProgress = Math.min((now - themeStartedAt) / 800, 1);
+    const themeEase = themeProgress * themeProgress * (3 - 2 * themeProgress);
+    const dark = themeProgress === 1 ? themeTarget : themeFrom + (themeTarget - themeFrom) * themeEase;
+    material.uniforms.dark.value = dark;
+    dustMaterial.uniforms.dark.value = dark;
     renderer.render(scene, camera);
     if (clock - lastUpdate > .08) {
-      onUpdate({ assembled, paused, progress, settled });
+      onUpdate({ assembled, paused, progress, settled, time: clock });
       lastUpdate = clock;
     }
-    if (!paused && !document.hidden) frameId = requestAnimationFrame(animate);
+    if ((!paused || themeProgress < 1) && !document.hidden) frameId = requestAnimationFrame(animate);
   }
 
   function schedule() {
     cancelAnimationFrame(frameId);
     lastTime = 0;
-    if (!paused && !document.hidden) frameId = requestAnimationFrame(animate);
+    if ((!paused || material.uniforms.dark.value !== themeTarget) && !document.hidden) frameId = requestAnimationFrame(animate);
   }
 
   window.addEventListener('pointermove', event => {
@@ -289,15 +299,13 @@ export async function createParticlePortrait({ canvas, image, anchor, reducedMot
   document.addEventListener('visibilitychange', schedule, { signal: events.signal });
   resize(true);
   material.uniforms.assembly.value = progress;
-  settled = reducedMotion;
-  onUpdate({ assembled, paused, progress, settled });
+  onUpdate({ assembled, paused, progress, settled, time: clock });
   if (paused) renderer.render(scene, camera);
   schedule();
-  let previousWidth = width;
-  let previousHeight = height;
-  const observer = new ResizeObserver(([entry]) => {
-    if (entry.contentRect.width === previousWidth && entry.contentRect.height === previousHeight) return;
-    previousWidth = entry.contentRect.width; previousHeight = entry.contentRect.height;
+  const observer = new ResizeObserver(() => {
+    // Use the same measurement as resize(); contentRect rounds differently at fractional zoom.
+    const bounds = canvas.getBoundingClientRect();
+    if (bounds.width === width && bounds.height === height) return;
     resize();
   });
   observer.observe(canvas.parentElement);
@@ -305,7 +313,7 @@ export async function createParticlePortrait({ canvas, image, anchor, reducedMot
   return {
     toggle() { reducedMotion = false; transition(!assembled); return assembled; },
     replay() {
-      // Replay is an explicit request for motion even when autoplay was skipped.
+      // Replay restores full motion even when the ambient animation is reduced.
       reducedMotion = false;
       paused = false;
       positions.set(origins);
@@ -318,13 +326,14 @@ export async function createParticlePortrait({ canvas, image, anchor, reducedMot
       if (!paused) reducedMotion = false;
       pointer.active = false;
       renderer.render(scene, camera);
-      onUpdate({ assembled, paused, progress, settled });
+      onUpdate({ assembled, paused, progress, settled, time: clock });
       schedule();
     },
     setTheme(nextTheme) {
-      material.uniforms.dark.value = nextTheme === 'dark' ? 1 : 0;
-      dustMaterial.uniforms.dark.value = nextTheme === 'dark' ? 1 : 0;
-      renderer.render(scene, camera);
+      themeFrom = material.uniforms.dark.value;
+      themeTarget = nextTheme === 'dark' ? 1 : 0;
+      themeStartedAt = performance.now();
+      schedule();
     },
     setReducedMotion(value) {
       reducedMotion = value;
