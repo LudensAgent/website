@@ -1,13 +1,14 @@
 import {
   BufferAttribute, BufferGeometry, DynamicDrawUsage, OrthographicCamera,
-  Mesh, PlaneGeometry, Points, Scene, ShaderMaterial, Texture, Vector2, WebGLRenderer,
+  Points, Scene, ShaderMaterial, WebGLRenderer,
 } from 'three';
 
 /** Samples an alpha PNG once, then renders its colored pixels as independent WebGL points. */
 export async function createParticlePortrait({ canvas, image, anchor, reducedMotion, theme, onUpdate }) {
   await image.decode();
   const sample = document.createElement('canvas');
-  const sampleWidth = matchMedia('(max-width: 700px)').matches ? 360 : 800;
+  const compact = matchMedia('(max-width: 700px)').matches;
+  const sampleWidth = compact ? 480 : 960;
   sample.width = sampleWidth;
   sample.height = Math.round(sampleWidth * image.naturalHeight / image.naturalWidth);
   const sampling = sample.getContext('2d', { willReadFrequently: true });
@@ -54,52 +55,27 @@ export async function createParticlePortrait({ canvas, image, anchor, reducedMot
   geometry.setAttribute('color', new BufferAttribute(new Float32Array(colors), 3));
   geometry.setAttribute('alpha', new BufferAttribute(new Float32Array(alphas), 1));
   geometry.setAttribute('seed', new BufferAttribute(seeds, 1));
-  geometry.setAttribute('sourceUv', new BufferAttribute(new Float32Array(samples), 2));
-  const targetAttribute = new BufferAttribute(targets, 3);
-  geometry.setAttribute('home', targetAttribute);
-  // The texture and sampled points share one continuous, irregular material boundary.
-  const transitionShader = `
-    float reality(vec2 uv, vec3 color) {
-      float edge = .25 + sin(uv.y * 15.) * .025;
-      float grain = fract(sin(dot(floor(uv * 430.), vec2(12.9898,78.233))) * 43758.5453);
-      float outerHair = 1. - smoothstep(edge - .11, edge + .11, uv.x + (grain - .5) * .025);
-      float heightMask = smoothstep(.06, .18, uv.y) * (1. - smoothstep(.55, .70, uv.y));
-      float blueHair = smoothstep(.035, .12, color.b - color.r) * smoothstep(.015, .09, color.b - color.g);
-      return 1. - outerHair * heightMask * blueHair * .9;
-    }
-    float pointerHole(vec2 point, vec2 mouse, float strength) {
-      return (1. - smoothstep(12., 70., distance(point, mouse))) * strength * .55;
-    }
-  `;
-  const mouseUniform = { value: new Vector2(-10000, -10000) };
-  const pointerUniform = { value: 0 };
-  const assemblyUniform = { value: 0 };
+  const hazeAttribute = new BufferAttribute(haze, 1);
+  geometry.setAttribute('haze', hazeAttribute);
   const material = new ShaderMaterial({
     transparent: true,
     depthTest: false,
     depthWrite: false,
-    uniforms: { pointSize: { value: 2 }, assembly: assemblyUniform, dark: { value: theme === 'dark' ? 1 : 0 }, mouse: mouseUniform, pointerActive: pointerUniform },
+    uniforms: { pointSize: { value: 2 }, assembly: { value: 0 }, dark: { value: theme === 'dark' ? 1 : 0 } },
     vertexShader: `
       attribute vec3 color;
       attribute float alpha;
       attribute float seed;
-      attribute vec2 sourceUv;
-      attribute vec3 home;
+      attribute float haze;
       uniform float pointSize;
       uniform float assembly;
-      uniform vec2 mouse;
-      uniform float pointerActive;
       varying vec3 vColor;
       varying float vAlpha;
       varying float vHaze;
-      ${transitionShader}
       void main() {
-        float solid = reality(sourceUv, color);
-        float detail = smoothstep(.68, .99, assembly);
-        float hole = pointerHole(home.xy, mouse, pointerActive);
-        vHaze = (1. - solid) * assembly;
+        vHaze = haze * assembly;
         vColor = mix(color, vec3(.35,.61,.95), vHaze * .25);
-        vAlpha = alpha * (1. - solid * detail * (1. - hole));
+        vAlpha = alpha * mix(1., .75, vHaze);
         vAlpha *= mix(.035 + pow(seed, 6.) * .32, 1., assembly);
         gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         gl_PointSize = pointSize * mix(.3 + seed * .5, 1.0, assembly) * mix(1., .4 + seed * .46, vHaze);
@@ -120,38 +96,9 @@ export async function createParticlePortrait({ canvas, image, anchor, reducedMot
   });
   const portrait = new Points(geometry, material);
   portrait.frustumCulled = false;
-  const texture = new Texture(image);
-  texture.needsUpdate = true;
-  const detailGeometry = new PlaneGeometry(1, 1);
-  const detailMaterial = new ShaderMaterial({
-    transparent: true, depthWrite: false, depthTest: false,
-    uniforms: { portrait: { value: texture }, assembly: assemblyUniform, mouse: mouseUniform, pointerActive: pointerUniform },
-    vertexShader: `
-      varying vec2 vUv; varying vec2 vPoint;
-      void main() {
-        vUv = vec2(uv.x, 1. - uv.y);
-        vec4 point = modelMatrix * vec4(position, 1.);
-        vPoint = point.xy;
-        gl_Position = projectionMatrix * viewMatrix * point;
-      }`,
-    fragmentShader: `
-      uniform sampler2D portrait; uniform float assembly;
-      uniform vec2 mouse; uniform float pointerActive;
-      varying vec2 vUv; varying vec2 vPoint;
-      ${transitionShader}
-      void main() {
-        vec4 color = texture2D(portrait, vec2(vUv.x, 1. - vUv.y));
-        float mask = reality(vUv, color.rgb) * smoothstep(.68, .99, assembly);
-        color.a *= mask * (1. - pointerHole(vPoint, mouse, pointerActive));
-        gl_FragColor = color;
-      }`,
-  });
-  const detail = new Mesh(detailGeometry, detailMaterial);
-  scene.add(detail);
-  portrait.renderOrder = 1;
   scene.add(portrait);
 
-  const dustCount = sampleWidth === 360 ? 140 : 380;
+  const dustCount = compact ? 140 : 380;
   const dustSeeds = Float32Array.from({ length: dustCount * 3 }, () => Math.random());
   const dustGeometry = new BufferGeometry();
   dustGeometry.setAttribute('position', new BufferAttribute(dustSeeds, 3));
@@ -187,7 +134,7 @@ export async function createParticlePortrait({ canvas, image, anchor, reducedMot
   let lastTime = 0;
   let lastUpdate = -1;
   let assembled = true;
-  let paused = reducedMotion;
+  let paused = false;
   let settled = false;
   let progress = reducedMotion ? 1 : 0;
   let startProgress = progress;
@@ -207,8 +154,6 @@ export async function createParticlePortrait({ canvas, image, anchor, reducedMot
     camera.top = height / 2; camera.bottom = -height / 2;
     camera.updateProjectionMatrix();
     material.uniforms.pointSize.value = step * figure.width / sampleWidth * ratio * 1.55;
-    detail.position.set(figure.left - bounds.left + figure.width / 2 - width / 2, height / 2 - (figure.top - bounds.top + figure.height / 2), 0);
-    detail.scale.set(figure.width, figure.height, 1);
     dustMaterial.uniforms.width.value = width;
     dustMaterial.uniforms.height.value = height;
     dustMaterial.uniforms.ratio.value = ratio;
@@ -234,7 +179,7 @@ export async function createParticlePortrait({ canvas, image, anchor, reducedMot
       origins[index] = side === 0 ? -width * .65 : side === 1 ? width * .65 : (scatterX[i] - .5) * width * 1.5;
       origins[index + 1] = side === 2 ? -height * .65 : side === 3 ? height * .65 : (scatterY[i] - .5) * height * 1.5;
     }
-    targetAttribute.needsUpdate = true;
+    hazeAttribute.needsUpdate = true;
     if (initial) {
       positions.set(reducedMotion ? formed : origins);
       starts.set(positions);
@@ -277,8 +222,6 @@ export async function createParticlePortrait({ canvas, image, anchor, reducedMot
     const damping = Math.exp(-10 * delta);
     const radius = width < 701 ? 50 : 75;
     const destinations = assembled ? formed : scattered;
-    pointerUniform.value += ((pointer.active && !reducedMotion ? 1 : 0) - pointerUniform.value) * Math.min(1, delta * 12);
-    mouseUniform.value.set(pointer.x, pointer.y);
     for (let i = 0; i < count; i++) {
       const index = i * 3;
       const offset = i * 2;
@@ -291,12 +234,13 @@ export async function createParticlePortrait({ canvas, image, anchor, reducedMot
         x += Math.sin(clock * .45 + seeds[i] * 40) * 6 * ease;
         y += Math.cos(clock * .35 + seeds[i] * 30) * 6 * ease;
       } else {
-        x += Math.sin(clock * .4 + seeds[i] * 40) * haze[i] * seeds[i] * 3 * ease;
-        y += Math.cos(clock * .3 + seeds[i] * 30) * haze[i] * seeds[i] * 2 * ease;
+        const motion = reducedMotion ? .25 : 1;
+        x += Math.sin(clock * .4 + seeds[i] * 40) * haze[i] * seeds[i] * 3 * ease * motion;
+        y += Math.cos(clock * .3 + seeds[i] * 30) * haze[i] * seeds[i] * 2 * ease * motion;
       }
       let forceX = -offsets[offset] * 46;
       let forceY = -offsets[offset + 1] * 46;
-      if (pointer.active && !reducedMotion) {
+      if (pointer.active) {
         const dx = x + offsets[offset] - pointer.x;
         const dy = y + offsets[offset + 1] - pointer.y;
         const distanceSquared = dx * dx + dy * dy;
@@ -316,7 +260,7 @@ export async function createParticlePortrait({ canvas, image, anchor, reducedMot
     }
     positionAttribute.needsUpdate = true;
     material.uniforms.assembly.value = progress;
-    dustMaterial.uniforms.time.value = clock;
+    dustMaterial.uniforms.time.value = clock * (reducedMotion ? .25 : 1);
     renderer.render(scene, camera);
     if (clock - lastUpdate > .08) {
       onUpdate({ assembled, paused, progress, settled });
@@ -359,7 +303,7 @@ export async function createParticlePortrait({ canvas, image, anchor, reducedMot
   observer.observe(canvas.parentElement);
 
   return {
-    toggle() { transition(!assembled); return assembled; },
+    toggle() { reducedMotion = false; transition(!assembled); return assembled; },
     replay() {
       // Replay is an explicit request for motion even when autoplay was skipped.
       reducedMotion = false;
@@ -373,7 +317,6 @@ export async function createParticlePortrait({ canvas, image, anchor, reducedMot
       paused = !paused;
       if (!paused) reducedMotion = false;
       pointer.active = false;
-      pointerUniform.value = 0;
       renderer.render(scene, camera);
       onUpdate({ assembled, paused, progress, settled });
       schedule();
@@ -385,7 +328,6 @@ export async function createParticlePortrait({ canvas, image, anchor, reducedMot
     },
     setReducedMotion(value) {
       reducedMotion = value;
-      paused = value;
       pointer.active = false;
       transition(assembled);
       schedule();
@@ -395,7 +337,7 @@ export async function createParticlePortrait({ canvas, image, anchor, reducedMot
       cancelAnimationFrame(frameId);
       events.abort(); observer.disconnect();
       geometry.dispose(); material.dispose(); dustGeometry.dispose(); dustMaterial.dispose();
-      detailGeometry.dispose(); detailMaterial.dispose(); texture.dispose(); renderer.dispose();
+      renderer.dispose();
     },
   };
 }
