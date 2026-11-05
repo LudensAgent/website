@@ -26,6 +26,37 @@ const captions = [
   'A new world starts with a question.',
   'Let curiosity write the next chapter.',
 ];
+// "A General Game Agent Framework", echoed in twenty languages beneath the title.
+const translations = [
+  { lang: 'zh-Hans', text: '一个通用游戏智能体框架' },
+  { lang: 'ja', text: '汎用ゲームエージェントフレームワーク' },
+  { lang: 'ko', text: '범용 게임 에이전트 프레임워크' },
+  { lang: 'es', text: 'Un marco general para agentes de juego' },
+  { lang: 'fr', text: 'Un cadre général pour agents de jeu' },
+  { lang: 'de', text: 'Ein allgemeines Framework für Spielagenten' },
+  { lang: 'pt', text: 'Uma estrutura geral para agentes de jogo' },
+  { lang: 'it', text: 'Un framework generale per agenti di gioco' },
+  { lang: 'ru', text: 'Общий фреймворк игровых агентов' },
+  { lang: 'ar', text: 'إطار عام لوكلاء الألعاب', rtl: true },
+  { lang: 'hi', text: 'एक सामान्य गेम एजेंट फ्रेमवर्क' },
+  { lang: 'el', text: 'Ένα γενικό πλαίσιο πρακτόρων παιχνιδιού' },
+  { lang: 'tr', text: 'Genel bir oyun ajanı çerçevesi' },
+  { lang: 'nl', text: 'Een algemeen raamwerk voor spelagenten' },
+  { lang: 'pl', text: 'Ogólne ramy agentów do gier' },
+  { lang: 'sv', text: 'Ett allmänt ramverk för spelagenter' },
+  { lang: 'th', text: 'กรอบงานเอเจนต์เกมทั่วไป' },
+  { lang: 'vi', text: 'Một khung tác tử trò chơi tổng quát' },
+  { lang: 'id', text: 'Kerangka umum agen permainan' },
+  { lang: 'he', text: 'מסגרת כללית לסוכני משחק', rtl: true },
+];
+const translationLine = document.querySelector('.description-translation');
+const translationText = document.querySelector('#translation-text');
+let translationIndex = 0;
+let translationChars = [];
+let translationCount = 0;
+let translationDeleting = false;
+let translationNextAt = 0;
+let translationPaused = false;
 let captionIndex = 0;
 let characterCount = 0;
 let deletingCaption = false;
@@ -52,7 +83,44 @@ themePreference.addEventListener('change', event => {
 });
 setTheme(root.dataset.theme);
 
+function setTranslationLanguage(index) {
+  translationIndex = index;
+  const translation = translations[index];
+  translationChars = Array.from(translation.text);
+  translationText.lang = translation.lang;
+  translationLine.dir = translation.rtl ? 'rtl' : 'ltr';
+}
+
+// Type each translation in, hold it, erase it, then move to the next language.
+// Mirrors the telemetry caption, which keeps typing even when reduced motion is requested.
+function updateTranslation(time) {
+  if (time < translationNextAt) return;
+  if (!translationDeleting && translationCount === translationChars.length) {
+    translationDeleting = true;
+    translationNextAt = time + 2.4 + Math.random() * .8;
+    return;
+  }
+  translationCount = Math.max(0, Math.min(translationChars.length, translationCount + (translationDeleting ? -2 : 1)));
+  translationText.textContent = translationChars.slice(0, translationCount).join('');
+  translationNextAt = time + (translationDeleting ? .035 : .055 + Math.random() * .045);
+  if (translationDeleting && translationCount === 0) {
+    setTranslationLanguage((translationIndex + 1) % translations.length);
+    translationDeleting = false;
+    translationNextAt = time + .45;
+  } else if (!translationDeleting && translationCount === translationChars.length) {
+    translationDeleting = true;
+    translationNextAt = time + 2.4 + Math.random() * .8;
+  }
+}
+
+setTranslationLanguage(0);
+requestAnimationFrame(function animateTranslations(now) {
+  if (hero.dataset.ready === 'true' && !translationPaused) updateTranslation(now / 1000);
+  requestAnimationFrame(animateTranslations);
+});
+
 function updateControls({ assembled, paused, progress, settled, time }) {
+  translationPaused = paused;
   const controls = `${assembled}:${paused}:${settled}`;
   if (controls !== previousControls) {
     toggle.setAttribute('aria-pressed', String(!assembled));

@@ -1,1 +1,24 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 40" fill="none" stroke="#447ded" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 34c5-6 5-11 1-14C12 22 5 17 3 8c8 4 16 2 21 8 5-6 13-4 21-8-2 9-9 14-18 12 4 5 4 11 0 16"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img">
+<title>Pixel Whale Game Agent</title>
+<desc>Blue whale tail with pixelated tips, symbolizing an AI agent entering a game world.</desc>
+<g fill="none" stroke="#3979E8" stroke-width="46" stroke-linecap="round" stroke-linejoin="round">
+<path d="M160 280 C250 326 365 330 438 365 C474 382 495 403 512 420 C530 401 552 382 588 365 C661 330 776 326 864 280 C842 380 765 451 674 470 C635 478 600 467 570 462"/>
+<path d="M462 462 C430 470 397 475 363 470 C270 456 190 384 160 280"/>
+<path d="M462 462 C520 510 522 570 505 625 C492 671 466 706 445 728"/>
+<path d="M570 462 C626 527 634 591 616 651 C604 691 584 724 562 750"/>
+</g>
+<g fill="#3979E8">
+<rect x="142" y="260" width="48" height="48" rx="3"/>
+<rect x="190" y="292" width="43" height="43" rx="3"/>
+<rect x="834" y="292" width="43" height="43" rx="3"/>
+<rect x="834" y="260" width="48" height="48" rx="3"/>
+<rect x="424" y="694" width="44" height="44" rx="3"/>
+<rect x="542" y="724" width="44" height="44" rx="3"/>
+</g>
+<g fill="#12C6E8">
+<rect x="174" y="340" width="40" height="40" rx="3"/>
+<rect x="810" y="340" width="40" height="40" rx="3"/>
+<rect x="400" y="738" width="42" height="42" rx="3"/>
+<rect x="610" y="766" width="42" height="42" rx="3"/>
+</g>
+</svg>
